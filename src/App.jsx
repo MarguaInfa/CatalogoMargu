@@ -235,7 +235,7 @@ export default function App() {
         </select>
       </div>
 {/* LISTA DE PRODUCTOS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {filtrados.map((p) => (
           <div
             key={p.Serie + p.Color}
@@ -243,7 +243,7 @@ export default function App() {
           >
             <img
               src={`/fotos/${p.Foto}`}
-              className="w-full h-64 object-cover rounded-md"
+              className="w-full aspect-square object-cover rounded-md"
             />
 
             <h2 className="font-bold mt-2">{p.Serie}</h2>
