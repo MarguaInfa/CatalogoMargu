@@ -194,11 +194,22 @@ const mensaje = encodeURIComponent(
     // ==========================================================
   // UI
   // ==========================================================
-  return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold text-center mb-6">
-        Catálogo Margu Infantil
-      </h1>
+return (
+  <div className="p-6">
+
+    {/* LOGO SUPERIOR IZQUIERDO */}
+    <div className="flex items-center mb-6">
+      <img 
+        src="/logo.png" 
+        alt="Logo Margu" 
+        className="w-20 h-auto"
+      />
+    </div>
+
+    <h1 className="text-3xl font-bold text-center mb-6">
+      Catálogo Margu Infantil
+    </h1>
+
 
       {/* FILTROS */}
       <div className="flex gap-3 justify-center mb-6 flex-wrap">
