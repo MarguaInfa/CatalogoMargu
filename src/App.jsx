@@ -133,6 +133,11 @@ export default function App() {
     const pedido = generarPedidoParaExcel();
     return pedido.reduce((sum, item) => sum + item.cantidad * item.precio, 0);
   })();
+
+  const envio = 250;
+const subtotal = total;
+const totalFinal = subtotal + envio;
+
 // ==========================================================
   // ENVIAR PEDIDO
   // ==========================================================
@@ -166,12 +171,15 @@ export default function App() {
         totalDinero += x.cantidad * x.precio;
       });
 
-      const mensaje = encodeURIComponent(
-        `Pedido nuevo de ${cliente}\n\n` +
-          `Piezas: ${totalPzas}\n` +
-          `Total: $${totalDinero}\n\n` +
-          `Archivo:\n${data.url}`
-      );
+const mensaje = encodeURIComponent(
+  `Pedido nuevo de ${cliente}\n\n` +
+    `Piezas: ${totalPzas}\n` +
+    `Subtotal: $${totalDinero}\n` +
+    `Envío: $250\n` +
+    `Total: $${totalDinero + 250}\n\n` +
+    `Archivo:\n${data.url}`
+);
+
 
       const tel = "523471072670";
       window.open(`https://wa.me/${tel}?text=${mensaje}`, "_blank");
@@ -328,24 +336,32 @@ export default function App() {
       </div>
 
       {/* TOTAL & ENVIAR */}
-      <div className="text-center mt-10">
-        <h2 className="text-xl font-bold">Total: ${total}</h2>
+<div className="text-center mt-10">
+  <h2 className="text-2xl font-bold mb-2">Resumen del pedido</h2>
 
-        <input
-        type="text"
-          className="border p-2 rounded mt-3 w-64"
-          placeholder="Nombre del cliente"
-          value={cliente}
-          onChange={(e) => setCliente(e.target.value)}
-        />
+  <p className="text-lg">Subtotal: <b>${subtotal}</b></p>
+  <p className="text-lg">Envío: <b>${envio}</b></p>
 
-        <button
-          onClick={enviarPedido}
-          className="block mx-auto mt-4 bg-green-600 text-white px-6 py-2 rounded"
-        >
-          Enviar pedido
-        </button>
-      </div>
+  <h2 className="text-2xl font-bold mt-2">
+    Total: ${totalFinal}
+  </h2>
+
+  <input
+    type="text"
+    className="border p-2 rounded mt-3 w-64"
+    placeholder="Nombre del cliente"
+    value={cliente}
+    onChange={(e) => setCliente(e.target.value)}
+  />
+
+  <button
+    onClick={enviarPedido}
+    className="block mx-auto mt-4 bg-green-600 text-white px-6 py-2 rounded"
+  >
+    Enviar pedido
+  </button>
+</div>
+
   </div>
   );
 }
