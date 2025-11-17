@@ -6,7 +6,7 @@ export default async function handler(req, res) {
 
   try {
     const GOOGLE_SCRIPT_URL =
-      "https://script.google.com/macros/s/AKfycbz0_1z2YFTCYnMGEYulW8fq6_I65i-wo8q7RuNhijwUeUVZmZiYt1XcvIvJMpox2n-zQQ/exec";
+      "https://script.google.com/macros/s/AKfycbygr3wBqcFG2j4TOpgAkyLwNE_q4kne8T2nkSWXxaTikXUpbY3A2b56IbLVtZzPhrT63w/exec";
 
     const r = await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
