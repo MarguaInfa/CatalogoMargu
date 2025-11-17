@@ -13,17 +13,16 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Faltan datos" });
     }
 
-    // Conectar Supabase
+    // Cliente Supabase
     const supabase = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_KEY
     );
 
-    // Crear workbook de Excel
+    // Crear Excel
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Pedido");
 
-    // Encabezados
     sheet.addRow([
       "Lote",
       "Serie",
@@ -35,7 +34,6 @@ export default async function handler(req, res) {
       "Precio",
     ]);
 
-    // Agregar filas
     pedido.forEach((p) => {
       sheet.addRow([
         p.lote,
@@ -49,17 +47,17 @@ export default async function handler(req, res) {
       ]);
     });
 
-    // Convertir a buffer
     const buffer = await workbook.xlsx.writeBuffer();
 
-    // Nombre del archivo
     const fileName = `${Date.now()}_${cliente}.xlsx`;
 
-    // Subir a Supabase Storage
-    const { data, error } = await supabase.storage
+    // Subir archivo al bucket "pedidos"
+    const { error } = await supabase.storage
       .from("pedidos")
       .upload(fileName, buffer, {
-        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        contentType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        upsert: true,
       });
 
     if (error) {
@@ -67,13 +65,18 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Error subiendo archivo" });
     }
 
-    // Obtener URL pública
-    const urlPublica = `${process.env.SUPABASE_URL}/storage/v1/object/public/pedidos/${fileName}`;
+    // Construir URL pública correcta
+    const urlPublica =
+  `${process.env.SUPABASE_PROJECT_URL}` +
+  `/storage/v1/object/public/pedidos/${fileName}`;
+
 
     return res.status(200).json({
       ok: true,
       url: urlPublica,
+      fileName,
     });
+
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Error interno" });
