@@ -76,20 +76,29 @@ export default function App() {
   // =====================================================
   // TOTAL
   const total = (() => {
-    let totalDinero = 0;
+  let totalDinero = 0;
 
-    productos.forEach((p) => {
-      const pzas = p.Tallas.reduce((s, t) => s + Number(t.cantidad || 0), 0);
-      if (pzas === 0) return;
+  productos.forEach((p) => {
+    // Sumar piezas totales
+    const pzas = p.Tallas.reduce((s, t) => s + Number(t.cantidad || 0), 0);
+    if (pzas === 0) return;
 
-      let precio = p.Menudeo;
-      if (pzas >= p.Tallas.filter((x) => x.Inventario > 0).length) precio = p.Corrida;
+    // Tallas con stock
+    const tallasConStock = p.Tallas.filter(t => t.Inventario > 0);
 
-      totalDinero += pzas * precio;
-    });
+    // Verificar si pidió al menos 1 pieza EN CADA TALLA con stock
+    const esCorrida = tallasConStock.every(t => Number(t.cantidad || 0) >= 1);
 
-    return totalDinero;
-  })();
+    // Elegir precio correcto
+    const precio = esCorrida ? p.Corrida : p.Menudeo;
+
+    // Sumar al total
+    totalDinero += pzas * precio;
+  });
+
+  return totalDinero;
+})();
+
 
   // =====================================================
   // GENERAR PEDIDO
