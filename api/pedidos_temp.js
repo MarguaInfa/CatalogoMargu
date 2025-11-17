@@ -1,3 +1,4 @@
+// api/pedidos.js
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ ok: false, error: "Método no permitido" });
@@ -15,8 +16,17 @@ export default async function handler(req, res) {
 
     const texto = await r.text();
 
-    return res.status(200).send(texto);
+    // Intentamos devolver JSON si es posible, si no texto plano
+    try {
+      const json = JSON.parse(texto);
+      return res.status(200).json(json);
+    } catch {
+      return res.status(200).send(texto);
+    }
   } catch (error) {
-    return res.status(500).json({ ok: false, error: String(error) });
+    console.error("Error llamando a Apps Script:", error);
+    return res
+      .status(500)
+      .json({ ok: false, error: "Error llamando a Google Apps Script" });
   }
 }
