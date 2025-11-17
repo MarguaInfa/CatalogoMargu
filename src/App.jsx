@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 export default function App() {
-  const API_PEDIDOS = "/api/pedidos"; // backend supabase
+  const API_PEDIDOS = "/api/pedidos";
 
   const [productosData, setProductosData] = useState([]);
   const [productos, setProductos] = useState([]);
@@ -12,22 +12,24 @@ export default function App() {
   const [filtroColor, setFiltroColor] = useState("");
   const [filtroTalla, setFiltroTalla] = useState("");
 
-  // =====================================================
-  // Cargar productos.json
+  // ==========================================================
+  // CARGAR productos.json
+  // ==========================================================
   useEffect(() => {
     fetch("/productos.json")
       .then((res) => res.json())
       .then((data) => setProductosData(data));
   }, []);
-
-  // =====================================================
-  // Agrupar productos
+// ==========================================================
+  // AGRUPAR PRODUCTOS POR Serie + Color
+  // ==========================================================
   useEffect(() => {
     if (productosData.length === 0) return;
 
     const agrupados = Object.values(
       productosData.reduce((acc, p) => {
         const key = `${p.Serie}-${p.Color}`;
+
         if (!acc[key]) {
           acc[key] = {
             Genero: p.Genero,
@@ -41,15 +43,16 @@ export default function App() {
             Mayoreo: p.Mayoreo,
             Corrida: p.Corrida,
             corridas: 0,
-            Tallas: []
+            Tallas: [],
           };
         }
-        acc[key].Tallas.push({
+ acc[key].Tallas.push({
           Talla: p.Talla,
           Edad: p.Edad,
           Inventario: p.Inventario,
-          cantidad: 0
+          cantidad: 0,
         });
+
         return acc;
       }, {})
     );
@@ -57,8 +60,9 @@ export default function App() {
     setProductos(agrupados);
   }, [productosData]);
 
-  // =====================================================
+  // ==========================================================
   // FILTROS
+  // ==========================================================
   const filtrados = productos.filter((p) => {
     return (
       (!filtroGenero || p.Genero === filtroGenero) &&
@@ -71,58 +75,39 @@ export default function App() {
   const generos = [...new Set(productos.map((p) => p.Genero))];
   const prendas = [...new Set(productos.map((p) => p.Prenda))];
   const colores = [...new Set(productos.map((p) => p.Color))];
-  const tallas = [...new Set(productos.flatMap((p) => p.Tallas.map((t) => t.Talla)))];
-
-  // =====================================================
-  // TOTAL
-  const total = (() => {
-  let totalDinero = 0;
-
-  productos.forEach((p) => {
-    // Sumar piezas totales
-    const pzas = p.Tallas.reduce((s, t) => s + Number(t.cantidad || 0), 0);
-    if (pzas === 0) return;
-
-    // Tallas con stock
-    const tallasConStock = p.Tallas.filter(t => t.Inventario > 0);
-
-    // Verificar si pidió al menos 1 pieza EN CADA TALLA con stock
-    const esCorrida = tallasConStock.every(t => Number(t.cantidad || 0) >= 1);
-
-    // Elegir precio correcto
-    const precio = esCorrida ? p.Corrida : p.Menudeo;
-
-    // Sumar al total
-    totalDinero += pzas * precio;
-  });
-
-  return totalDinero;
-})();
-
-
-  // =====================================================
-  // GENERAR PEDIDO
+  const tallas = [
+    ...new Set(productos.flatMap((p) => p.Tallas.map((t) => t.Talla))),
+  ];
+// ==========================================================
+  // GENERAR PEDIDO (CORRIDA / MAYOREO GLOBAL / MENUDEO)
+  // ==========================================================
   const generarPedidoParaExcel = () => {
     const pedidoFinal = [];
+
     let totalPiezas = 0;
+    productos.forEach((p) =>
+      p.Tallas.forEach((t) => (totalPiezas += Number(t.cantidad || 0)))
+    );
 
     productos.forEach((p) => {
-      p.Tallas.forEach((t) => (totalPiezas += Number(t.cantidad || 0)));
-    });
+     const pedidas = p.Tallas.filter((t) => Number(t.cantidad) > 0);
+     if (pedidas.length === 0) return;
 
-    productos.forEach((p) => {
-      const disponibles = p.Tallas.filter((t) => t.Inventario > 0).map((t) => t.Talla);
-      const pedidas = p.Tallas.filter((t) => Number(t.cantidad) > 0);
+      const disponibles = p.Tallas.filter((t) => t.Inventario > 0);
 
-      if (pedidas.length === 0) return;
+      const esCorridaReal = disponibles.every(
+        (t) => Number(t.cantidad || 0) >= 1
+      );
 
-      const esCorrida =
-        pedidas.length === disponibles.length &&
-        pedidas.every((t) => disponibles.includes(t.Talla));
+      let precioFinal;
 
-      let precioFinal = p.Menudeo;
-      if (totalPiezas > 12) precioFinal = p.Mayoreo;
-      if (esCorrida) precioFinal = p.Corrida;
+      if (esCorridaReal) {
+        precioFinal = p.Corrida;
+      } else if (totalPiezas >= 12) {
+        precioFinal = p.Mayoreo;
+      } else {
+        precioFinal = p.Menudeo;
+      }
 
       pedidas.forEach((t) => {
         pedidoFinal.push({
@@ -131,9 +116,9 @@ export default function App() {
           cb: p.CB,
           color: p.Color,
           talla: t.Talla,
-          cantidad: Number(t.cantidad),
+          cantidad: Number(t.cantidad || 0),
           foto: p.Foto,
-          precio: precioFinal
+          precio: precioFinal,
         });
       });
     });
@@ -141,62 +126,66 @@ export default function App() {
     return pedidoFinal;
   };
 
-  // =====================================================
+  // ==========================================================
+  // TOTAL MOSTRADO EN PANTALLA
+  // ==========================================================
+  const total = (() => {
+    const pedido = generarPedidoParaExcel();
+    return pedido.reduce((sum, item) => sum + item.cantidad * item.precio, 0);
+  })();
+// ==========================================================
   // ENVIAR PEDIDO
- const enviarPedido = async () => {
-  if (!cliente) {
-    alert("Escribe el nombre del cliente");
-    return;
-  }
-
-  const pedido = generarPedidoParaExcel();
-
-  try {
-    const r = await fetch("/api/pedidos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cliente, pedido }),
-    });
-
-    const data = await r.json();
-
-    if (!data.ok) {
-      alert("Error al generar archivo: " + data.error);
+  // ==========================================================
+  const enviarPedido = async () => {
+    if (!cliente.trim()) {
+      alert("Escribe el nombre del cliente");
       return;
     }
 
-    // Descargar Excel
+    const pedido = generarPedidoParaExcel();
 
+    try {
+      const r = await fetch(API_PEDIDOS, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cliente, pedido }),
+      });
 
-    // Calcular totales
-    let totalPzas = 0;
-    let totalDinero = 0;
+      const data = await r.json();
 
-    pedido.forEach((p) => {
-      totalPzas += p.cantidad;
-      totalDinero += p.cantidad * p.precio;
-    });
+      if (!data.ok) {
+        alert("Error generando archivo: " + data.error);
+        return;
+      }
 
-    // Mensaje para WhatsApp
-    const mensaje = encodeURIComponent(
-      `📦 NUEVO PEDIDO\n\nCliente: ${cliente}\nPiezas: ${totalPzas}\nTotal: $${totalDinero}\n\nArchivo Excel:\n${data.url}`
-    );
+      let totalPzas = 0;
+      let totalDinero = 0;
 
-    const telefono = "523471072670";
-    const urlWhatsapp = `https://wa.me/${telefono}?text=${mensaje}`;
-    window.open(urlWhatsapp, "_blank");
+      pedido.forEach((x) => {
+        totalPzas += x.cantidad;
+        totalDinero += x.cantidad * x.precio;
+      });
 
-    alert("Pedido enviado y WhatsApp generado");
+      const mensaje = encodeURIComponent(
+        `Pedido nuevo de ${cliente}\n\n` +
+          `Piezas: ${totalPzas}\n` +
+          `Total: $${totalDinero}\n\n` +
+          `Archivo:\n${data.url}`
+      );
 
-  } catch (err) {
-    console.error(err);
-    alert("Error general al enviar el pedido");
-  }
-};
+      const tel = "523471072670";
+      window.open(`https://wa.me/${tel}?text=${mensaje}`, "_blank");
 
+      alert("Pedido enviado ✔");
+    } catch (err) {
+      console.error(err);
+      alert("Error enviando pedido");
+    }
+  };
 
-  // =====================================================
+    // ==========================================================
   // UI
+  // ==========================================================
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold text-center mb-6">
@@ -205,45 +194,61 @@ export default function App() {
 
       {/* FILTROS */}
       <div className="flex gap-3 justify-center mb-6 flex-wrap">
-        <select onChange={(e) => setFiltroGenero(e.target.value)} className="border p-2 rounded">
-          <option value="">Todos los géneros</option>
-          {generos.map((g) => <option key={g}>{g}</option>)}
+        <select
+          className="border p-2 rounded"
+          onChange={(e) => setFiltroGenero(e.target.value)}
+        >
+          <option value="">Género</option>
+          {generos.map((g) => (
+            <option key={g}>{g}</option>
+          ))}
         </select>
 
-        <select onChange={(e) => setFiltroPrenda(e.target.value)} className="border p-2 rounded">
-          <option value="">Todas las prendas</option>
-          {prendas.map((p) => <option key={p}>{p}</option>)}
+        <select
+          className="border p-2 rounded"
+          onChange={(e) => setFiltroPrenda(e.target.value)}
+        >
+          <option value="">Prenda</option>
+          {prendas.map((p) => (
+            <option key={p}>{p}</option>
+          ))}
         </select>
 
-        <select onChange={(e) => setFiltroColor(e.target.value)} className="border p-2 rounded">
-          <option value="">Todos los colores</option>
-          {colores.map((c) => <option key={c}>{c}</option>)}
+        <select
+          className="border p-2 rounded"
+          onChange={(e) => setFiltroColor(e.target.value)}
+        >
+          <option value="">Color</option>
+          {colores.map((c) => (
+            <option key={c}>{c}</option>
+          ))}
         </select>
 
-        <select onChange={(e) => setFiltroTalla(e.target.value)} className="border p-2 rounded">
-          <option value="">Todas las tallas</option>
-          {tallas.map((t) => <option key={t}>{t}</option>)}
+        <select
+          className="border p-2 rounded"
+          onChange={(e) => setFiltroTalla(e.target.value)}
+        >
+          <option value="">Talla</option>
+          {tallas.map((t) => (
+            <option key={t}>{t}</option>
+          ))}
         </select>
       </div>
-
-      {/* PRODUCTOS */}
+{/* LISTA DE PRODUCTOS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {filtrados.map((p) => (
-          <div key={p.Serie + p.Color} className="border p-3 bg-white rounded-xl shadow-md">
-
-            {/* IMAGEN */}
-            <div className="w-full aspect-square bg-gray-100 rounded overflow-hidden">
-              <img
-                src={`/fotos/${p.Foto}`}
-                className="w-full h-full object-cover"
-                alt={p.Serie}
-              />
-            </div>
+          <div
+            key={p.Serie + p.Color}
+            className="border p-3 bg-white rounded-xl shadow-md"
+          >
+            <img
+              src={`/fotos/${p.Foto}`}
+              className="w-full h-64 object-cover rounded-md"
+            />
 
             <h2 className="font-bold mt-2">{p.Serie}</h2>
             <p className="text-gray-600">{p.Color}</p>
-
-            {/* CORRIDAS */}
+          {/* CORRIDAS */}
             <div className="mt-2">
               <label>Corridas: </label>
               <input
@@ -254,10 +259,7 @@ export default function App() {
                 onChange={(e) => {
                   const valor = Number(e.target.value);
                   const nuevo = [...productos];
-
-                  const prod = nuevo.find(
-                    (x) => x.Serie === p.Serie && x.Color === p.Color
-                  );
+                  const prod = nuevo.find((x) => x.Serie === p.Serie && x.Color === p.Color);
 
                   prod.corridas = valor;
 
@@ -269,13 +271,11 @@ export default function App() {
                     });
                   }
 
-                  setProductos(nuevo);
+      setProductos(nuevo);
                 }}
               />
             </div>
-
-            {/* TABLA */}
-            <table className="w-full mt-3 text-center text-sm">
+           <table className="w-full mt-3 text-center text-sm">
               <thead className="bg-gray-200">
                 <tr>
                   <th>Talla</th>
@@ -286,6 +286,7 @@ export default function App() {
                   <th>Stock</th>
                 </tr>
               </thead>
+
               <tbody>
                 {p.Tallas.map((t, i) => (
                   <tr key={i}>
@@ -293,6 +294,7 @@ export default function App() {
                     <td>${p.Menudeo}</td>
                     <td>${p.Mayoreo}</td>
                     <td>${p.Corrida}</td>
+
                     <td>
                       <input
                         type="number"
@@ -305,31 +307,34 @@ export default function App() {
                           const prod = nuevo.find(
                             (x) => x.Serie === p.Serie && x.Color === p.Color
                           );
+
                           prod.Tallas[i].cantidad = Number(e.target.value);
                           setProductos(nuevo);
                         }}
                       />
                     </td>
-                    <td className={t.Inventario > 0 ? "text-green-600" : "text-red-600"}>
+
+                    <td
+                      className={t.Inventario > 0 ? "text-green-600" : "text-red-600"}
+                    >
                       {t.Inventario > 0 ? "En stock" : "No hay"}
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>
-
-          </div>
+           </table>
+                     </div>
         ))}
       </div>
 
-      {/* TOTAL + CLIENTE */}
+      {/* TOTAL & ENVIAR */}
       <div className="text-center mt-10">
         <h2 className="text-xl font-bold">Total: ${total}</h2>
 
         <input
-          type="text"
-          placeholder="Nombre del cliente"
+        type="text"
           className="border p-2 rounded mt-3 w-64"
+          placeholder="Nombre del cliente"
           value={cliente}
           onChange={(e) => setCliente(e.target.value)}
         />
@@ -341,7 +346,7 @@ export default function App() {
           Enviar pedido
         </button>
       </div>
-
-    </div>
+  </div>
   );
 }
+
