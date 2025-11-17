@@ -150,17 +150,24 @@ export default function App() {
 
     const pedido = generarPedidoParaExcel();
 
-    let respuesta;
-    try {
-      respuesta = await fetch(GOOGLE_SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: "margu123", cliente, pedido })
-      }).then((res) => res.json());
-    } catch (err) {
-      alert("Error enviando a Google Apps Script");
-      return;
-    }
+
+let respuesta;
+try {
+  const r = await fetch(GOOGLE_SCRIPT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: "margu123", cliente, pedido })
+  });
+
+  const texto = await r.text();
+  console.log("RESPUESTA GOOGLE:", texto);
+  respuesta = JSON.parse(texto); // intentamos convertirlo en JSON
+} catch (e) {
+  alert("Error al recibir respuesta del servidor");
+  console.log("ERROR AL PROCESAR RESPUESTA:", e);
+  return;
+}
+
 
     const urlExcel = respuesta.archivoUrl || "No generado";
 
