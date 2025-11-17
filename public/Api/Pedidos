@@ -1,0 +1,36 @@
+// api/pedido.js
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ ok: false, error: "Método no permitido" });
+  }
+
+  try {
+    // Cuerpo que mandó tu React: { token, cliente, pedido }
+    const body = req.body;
+
+    // URL de tu Apps Script (la /exec correcta)
+    const GOOGLE_SCRIPT_URL =
+      "https://script.google.com/macros/s/AKfycbzPswHRFB8icjAQZ5NUQRgZvnVu-pEodNn7Pwdp8ktZytKucNgnnoC2thsmPGDMqoFQxQ/exec";
+
+    const r = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    const texto = await r.text();
+
+    // Intenta devolver JSON; si no es JSON, lo devuelve como texto plano
+    try {
+      const json = JSON.parse(texto);
+      return res.status(200).json(json);
+    } catch (e) {
+      return res.status(200).send(texto);
+    }
+  } catch (err) {
+    console.error("Error llamando a Apps Script:", err);
+    return res
+      .status(500)
+      .json({ ok: false, error: "Error llamando a Google Apps Script" });
+  }
+}

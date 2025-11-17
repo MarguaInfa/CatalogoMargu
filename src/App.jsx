@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 
 export default function App() {
 
-  const GOOGLE_SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbzPswHRFB8icjAQZ5NUQRgZvnVu-pEodNn7Pwdp8ktZytKucNgnnoC2thsmPGDMqoFQxQ/exec";
+  const GOOGLE_SCRIPT_URL ="/api/Pedidos";
 
   const [productosData, setProductosData] = useState([]);
   const [productos, setProductos] = useState([]);
