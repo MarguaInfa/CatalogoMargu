@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 export default function App() {
 
   const GOOGLE_SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbwIrepxIHu57gCZzyavunpzxZ001b7eJ3ZTQ-fLI7Sz1z9NpZKqVh5l_uKBt-yrBwZ_kA/exec";
+    "https://script.google.com/macros/s/AKfycbzgLlsl-9154ktmsmSQVasE7IcsJ4HwTOsJhXWa82RhRtjs1-lMoPFsNPlzXqB1tn82aA/exec";
 
   const [productosData, setProductosData] = useState([]);
   const [productos, setProductos] = useState([]);
@@ -155,7 +155,7 @@ export default function App() {
       respuesta = await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cliente, pedido })
+        body: JSON.stringify({ token: "margu123", cliente, pedido })
       }).then((res) => res.json());
     } catch (err) {
       alert("Error enviando a Google Apps Script");
