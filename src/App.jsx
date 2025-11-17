@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 
 export default function App() {
 
-  const GOOGLE_SCRIPT_URL ="/api/pedidos";
+  const API_PEDIDOS = "/api/pedidos"; // ahora usamos tu backend
 
   const [productosData, setProductosData] = useState([]);
   const [productos, setProductos] = useState([]);
@@ -39,7 +39,7 @@ export default function App() {
             Prenda: p.Prenda,
             Color: p.Color,
             CB: p.CB,
-            Foto: p.Foto,   // <--- solo el nombre de la imagen, ej: "IMG_001.jpg"
+            Foto: p.Foto,
             Menudeo: p.Menudeo,
             Mayoreo: p.Mayoreo,
             Corrida: p.Corrida,
@@ -140,7 +140,7 @@ export default function App() {
   };
 
   // =====================================================
-  // ENVIAR PEDIDO A GOOGLE + WHATSAPP
+  // ENVIAR PEDIDO A TU BACKEND + WHATSAPP
   const enviarPedido = async () => {
     if (!cliente) {
       alert("Escribe el nombre del cliente");
@@ -149,48 +149,54 @@ export default function App() {
 
     const pedido = generarPedidoParaExcel();
 
+    try {
+      const r = await fetch(API_PEDIDOS, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cliente, pedido })
+      });
 
-let respuesta;
-try {
-  const r = await fetch(GOOGLE_SCRIPT_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token: "margu123", cliente, pedido })
-  });
+      const data = await r.json();
 
-  const texto = await r.text();
-  console.log("RESPUESTA GOOGLE:", texto);
-  respuesta = JSON.parse(texto); // intentamos convertirlo en JSON
-} catch (e) {
-  alert("Error al recibir respuesta del servidor");
-  console.log("ERROR AL PROCESAR RESPUESTA:", e);
-  return;
-}
+      if (!data.ok) {
+        alert("Error al generar archivo: " + data.error);
+        return;
+      }
+
+      // Descargar archivo
+      const link = document.createElement("a");
+      link.href = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${data.fileBase64}`;
+      link.download = data.fileName;
+      link.click();
 
 
-    const urlExcel = respuesta.archivoUrl || "No generado";
+      // Datos para WhatsApp
+      let totalPzas = 0;
+      let totalDinero = 0;
 
-    let totalPzas = 0;
-    let totalDinero = 0;
+      pedido.forEach((p) => {
+        totalPzas += p.cantidad;
+        totalDinero += p.cantidad * p.precio;
+      });
 
-    pedido.forEach((p) => {
-      totalPzas += p.cantidad;
-      totalDinero += p.cantidad * p.precio;
-    });
+      const mensaje = encodeURIComponent(
+        `Hola! Soy ${cliente}.\n\n` +
+        `Aquí está mi pedido:\n` +
+        `🧵 Piezas: ${totalPzas}\n` +
+        `💵 Total: $${totalDinero}\n\n` +
+        `Ya generé el archivo Excel del pedido ✔`
+      );
 
-    const mensaje = encodeURIComponent(
-      `Hola! Soy ${cliente}.\n\n` +
-      `Aquí está mi pedido:\n` +
-      `🧵 Piezas: ${totalPzas}\n` +
-      `💵 Total: $${totalDinero}\n\n` +
-      `📄 Archivo Excel del pedido:\n${urlExcel}`
-    );
+      const telefono = "523471072670";
+      const urlWhatsapp = `https://wa.me/${telefono}?text=${mensaje}`;
+      window.open(urlWhatsapp, "_blank");
 
-    const telefono = "523471072670";
-    const urlWhatsapp = `https://wa.me/${telefono}?text=${mensaje}`;
-    window.open(urlWhatsapp, "_blank");
+      alert("Pedido generado y enviado. WhatsApp abierto ✔");
 
-    alert("Pedido enviado. Se abrió WhatsApp con el mensaje listo.");
+    } catch (e) {
+      console.error("Error al enviar pedido:", e);
+      alert("Error general al procesar el pedido");
+    }
   };
 
   // =====================================================
@@ -233,7 +239,7 @@ try {
             {/* IMAGEN */}
             <div className="w-full aspect-square bg-gray-100 rounded overflow-hidden">
               <img
-                src={`/fotos/${p.Foto}`}  // <--- RUTA CORRECTA PARA VERCEL
+                src={`/fotos/${p.Foto}`}
                 className="w-full h-full object-cover"
                 alt={p.Serie}
               />

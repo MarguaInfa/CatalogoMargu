@@ -1,32 +1,65 @@
-// api/pedidos.js
+import ExcelJS from "exceljs";
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ ok: false, error: "Método no permitido" });
   }
 
   try {
-    const GOOGLE_SCRIPT_URL =
-      "https://script.google.com/macros/s/AKfycbw9dBBYyqxgdBhuqy7OiAVVf-g3rFep56yaP6rX_1Vp0X3kZORUKiR00hqHdM9A-mhC5w/exec";
+    const { cliente, pedido } = req.body;
 
-    const r = await fetch(GOOGLE_SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(req.body),
+    if (!cliente || !pedido) {
+      return res.status(400).json({ ok: false, error: "Faltan datos" });
+    }
+
+    // Crear workbook
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Pedido");
+
+    // Encabezados
+    sheet.addRow([
+      "Lote",
+      "Serie",
+      "CB",
+      "Color",
+      "Talla",
+      "Cantidad",
+      "Foto",
+      "Precio",
+    ]);
+
+    // Agregar items
+    pedido.forEach((item) => {
+      sheet.addRow([
+        item.lote,
+        item.serie,
+        item.cb,
+        item.color,
+        item.talla,
+        item.cantidad,
+        item.foto,
+        item.precio,
+      ]);
     });
 
-    const texto = await r.text();
+    // Nombre del archivo
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const fileName = `${timestamp}_${cliente}.xlsx`;
 
-    // Intentamos devolver JSON si es posible, si no texto plano
-    try {
-      const json = JSON.parse(texto);
-      return res.status(200).json(json);
-    } catch {
-      return res.status(200).send(texto);
-    }
-  } catch (error) {
-    console.error("Error llamando a Apps Script:", error);
-    return res
-      .status(500)
-      .json({ ok: false, error: "Error llamando a Google Apps Script" });
+    // Convertir a buffer
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    // Enviar archivo en base64
+    const base64 = buffer.toString("base64");
+
+    return res.status(200).json({
+      ok: true,
+      fileName,
+      fileBase64: base64,
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ ok: false, error: err.message });
   }
 }
