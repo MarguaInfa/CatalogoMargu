@@ -11,22 +11,55 @@ async function generarExcel(pedido) {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Pedido");
 
-  sheet.addRow(["Talla", "Cantidad", "Precio"]);
+     sheet.addRow([
+      "Lote",
+      "Serie",
+      "CB",
+      "Color",
+      "Talla",
+      "Cantidad",
+      "Foto",
+      "Precio",
+    ]);
 
-  pedido.forEach((p) => {
-    sheet.addRow([p.talla, p.cantidad, p.precio]);
-  });
 
+    pedido.forEach((p) => {
+      sheet.addRow([  
+        p.lote,
+        p.serie,
+        p.cb,
+        p.color,
+        p.talla,
+        p.cantidad,
+        p.foto,
+        p.precio,
+      ]);
+    });
   const buffer = await workbook.xlsx.writeBuffer();
   return buffer;
 }
+
+// Función para limpiar el nombre del cliente
+function limpiarNombre(str) {
+  return str
+    .normalize("NFD")                // Quita acentos
+    .replace(/[\u0300-\u036f]/g, "") // Quita marcas Unicode
+    .replace(/[^a-zA-Z0-9-_]/g, "_") // Reemplaza espacios y símbolos por "_"
+    .toLowerCase();                  // minúsculas
+}
+
+// Crear nombre del archivo
+const hoy = new Date();
+const fecha = `${hoy.getDate()}-${hoy.getMonth() + 1}-${hoy.getFullYear()}`;
+const nombreLimpio = limpiarNombre(cliente);
+
+
 
 export default async function handler(req, res) {
   try {
     const { cliente, pedido } = req.body;
 
-    const fileName = `${Date.now()}_${cliente}.xlsx`;
-
+    const fileName = `${fecha}_${nombreLimpio}.xlsx`;
     // Generar Excel correcto
     const buffer = await generarExcel(pedido);
 
