@@ -200,14 +200,14 @@ return (
     {/* LOGO SUPERIOR IZQUIERDO */}
     <div className="flex items-center mb-6">
       <img 
-        src="/logo.png" 
+        src="/logo.png.jpg" 
         alt="Logo Margu" 
         className="w-20 h-auto"
       />
     </div>
 
     <h1 className="text-3xl font-bold text-center mb-6">
-      Catálogo Margu Infantil
+      Catálogo Infantiles Margua
     </h1>
 
 
