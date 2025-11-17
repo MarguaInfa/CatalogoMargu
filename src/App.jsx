@@ -134,59 +134,57 @@ export default function App() {
 
   // =====================================================
   // ENVIAR PEDIDO
-  const enviarPedido = async () => {
-    if (!cliente) return alert("Escribe el nombre del cliente");
+ const enviarPedido = async () => {
+  if (!cliente) {
+    alert("Escribe el nombre del cliente");
+    return;
+  }
 
-    const pedido = generarPedidoParaExcel();
+  const pedido = generarPedidoParaExcel();
 
-    try {
-      const r = await fetch(API_PEDIDOS, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cliente, pedido })
-      });
+  try {
+    const r = await fetch("/api/pedidos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cliente, pedido }),
+    });
 
-      const data = await r.json();
+    const data = await r.json();
 
-      if (!data.ok) {
-        alert("Error al generar archivo: " + data.error);
-        return;
-      }
-
-      // DESCARGAR ARCHIVO DESDE SUPABASE
-      const link = document.createElement("a");
-      link.href = data.url;
-      link.target = "_blank";
-      link.click();
-
-      // ENVIAR WHATSAPP
-      let totalPzas = 0;
-      let totalDinero = 0;
-
-      pedido.forEach((p) => {
-        totalPzas += p.cantidad;
-        totalDinero += p.cantidad * p.precio;
-      });
-
-      const mensaje = encodeURIComponent(
-        `Hola! Soy ${cliente}.\n\n` +
-        `Aquí está mi pedido:\n` +
-        `🧵 Piezas: ${totalPzas}\n` +
-        `💵 Total: $${totalDinero}\n\n` +
-        `📄 Ya generé el archivo Excel del pedido:\n${data.url}`
-      );
-
-      const telefono = "523471072670";
-      const urlWhatsapp = `https://wa.me/${telefono}?text=${mensaje}`;
-      window.open(urlWhatsapp, "_blank");
-
-      alert("Pedido generado y WhatsApp abierto ✔");
-
-    } catch (e) {
-      console.error("Error al enviar pedido:", e);
-      alert("Error general al procesar el pedido");
+    if (!data.ok) {
+      alert("Error al generar archivo: " + data.error);
+      return;
     }
-  };
+
+    // Descargar Excel
+    window.open(data.url, "_blank");
+
+    // Calcular totales
+    let totalPzas = 0;
+    let totalDinero = 0;
+
+    pedido.forEach((p) => {
+      totalPzas += p.cantidad;
+      totalDinero += p.cantidad * p.precio;
+    });
+
+    // Mensaje para WhatsApp
+    const mensaje = encodeURIComponent(
+      `📦 NUEVO PEDIDO\n\nCliente: ${cliente}\nPiezas: ${totalPzas}\nTotal: $${totalDinero}\n\nArchivo Excel:\n${data.url}`
+    );
+
+    const telefono = "523471072670";
+    const urlWhatsapp = `https://wa.me/${telefono}?text=${mensaje}`;
+    window.open(urlWhatsapp, "_blank");
+
+    alert("Pedido enviado y WhatsApp generado");
+
+  } catch (err) {
+    console.error(err);
+    alert("Error general al enviar el pedido");
+  }
+};
+
 
   // =====================================================
   // UI
