@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 
 export default function App() {
 
-  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwIrepxIHu57gCZzyavunpzxZ001b7eJ3ZTQ-fLI7Sz1z9NpZKqVh5l_uKBt-yrBwZ_kA/exec";
+  const GOOGLE_SCRIPT_URL =
+    "https://script.google.com/macros/s/AKfycbwIrepxIHu57gCZzyavunpzxZ001b7eJ3ZTQ-fLI7Sz1z9NpZKqVh5l_uKBt-yrBwZ_kA/exec";
 
   const [productosData, setProductosData] = useState([]);
   const [productos, setProductos] = useState([]);
@@ -14,7 +15,7 @@ export default function App() {
   const [filtroColor, setFiltroColor] = useState("");
   const [filtroTalla, setFiltroTalla] = useState("");
 
-  // ============================================
+  // =====================================================
   // Cargar productos.json
   useEffect(() => {
     fetch("/productos.json")
@@ -22,7 +23,7 @@ export default function App() {
       .then((data) => setProductosData(data));
   }, []);
 
-  // ============================================
+  // =====================================================
   // Agrupar productos por Serie + Color
   useEffect(() => {
     if (productosData.length === 0) return;
@@ -39,7 +40,7 @@ export default function App() {
             Prenda: p.Prenda,
             Color: p.Color,
             CB: p.CB,
-            Foto: p.Foto,
+            Foto: p.Foto,   // <--- solo el nombre de la imagen, ej: "IMG_001.jpg"
             Menudeo: p.Menudeo,
             Mayoreo: p.Mayoreo,
             Corrida: p.Corrida,
@@ -62,8 +63,8 @@ export default function App() {
     setProductos(agrupados);
   }, [productosData]);
 
-  // ============================================
-  // FILTROS VISUALES
+  // =====================================================
+  // FILTROS
   const filtrados = productos.filter((p) => {
     return (
       (!filtroGenero || p.Genero === filtroGenero) &&
@@ -78,7 +79,7 @@ export default function App() {
   const colores = [...new Set(productos.map((p) => p.Color))];
   const tallas = [...new Set(productos.flatMap((p) => p.Tallas.map((t) => t.Talla)))];
 
-  // ============================================
+  // =====================================================
   // CALCULAR TOTAL
   const total = (() => {
     let totalPzas = 0;
@@ -98,7 +99,7 @@ export default function App() {
     return totalDinero;
   })();
 
-  // ============================================
+  // =====================================================
   // GENERAR PEDIDO PARA EXCEL
   const generarPedidoParaExcel = () => {
     const pedidoFinal = [];
@@ -139,7 +140,7 @@ export default function App() {
     return pedidoFinal;
   };
 
-  // ============================================
+  // =====================================================
   // ENVIAR PEDIDO A GOOGLE + WHATSAPP
   const enviarPedido = async () => {
     if (!cliente) {
@@ -149,7 +150,6 @@ export default function App() {
 
     const pedido = generarPedidoParaExcel();
 
-    // 1) ENVIAR A GOOGLE APPS SCRIPT
     let respuesta;
     try {
       respuesta = await fetch(GOOGLE_SCRIPT_URL, {
@@ -164,7 +164,6 @@ export default function App() {
 
     const urlExcel = respuesta.archivoUrl || "No generado";
 
-    // 2) Preparar WhatsApp
     let totalPzas = 0;
     let totalDinero = 0;
 
@@ -181,20 +180,21 @@ export default function App() {
       `📄 Archivo Excel del pedido:\n${urlExcel}`
     );
 
-    const telefono = "523471072670"; // ← TU NÚMERO AQUÍ
-
+    const telefono = "523471072670";
     const urlWhatsapp = `https://wa.me/${telefono}?text=${mensaje}`;
     window.open(urlWhatsapp, "_blank");
 
     alert("Pedido enviado. Se abrió WhatsApp con el mensaje listo.");
   };
 
-  // ============================================
+  // =====================================================
   // UI
   return (
     <div className="p-6">
 
-      <h1 className="text-3xl font-bold text-center mb-6">Catálogo Margu Infantil</h1>
+      <h1 className="text-3xl font-bold text-center mb-6">
+        Catálogo Margu Infantil
+      </h1>
 
       {/* FILTROS */}
       <div className="flex gap-3 justify-center mb-6 flex-wrap">
@@ -221,12 +221,16 @@ export default function App() {
 
       {/* PRODUCTOS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
         {filtrados.map((p) => (
           <div key={p.Serie + p.Color} className="border p-3 bg-white rounded-xl shadow-md">
 
+            {/* IMAGEN */}
             <div className="w-full aspect-square bg-gray-100 rounded overflow-hidden">
-              <img src={p.Foto} className="w-full h-full object-cover" />
+              <img
+                src={`/fotos/${p.Foto}`}  // <--- RUTA CORRECTA PARA VERCEL
+                className="w-full h-full object-cover"
+                alt={p.Serie}
+              />
             </div>
 
             <h2 className="font-bold mt-2">{p.Serie}</h2>
@@ -248,19 +252,13 @@ export default function App() {
                     (x) => x.Serie === p.Serie && x.Color === p.Color
                   );
 
-                  // Guardar cuántas corridas pidió
                   prod.corridas = valor;
 
                   if (valor === 0) {
-                    // limpiar cantidades
+                    prod.Tallas.forEach((t) => (t.cantidad = 0));
+                  } else {
                     prod.Tallas.forEach((t) => {
-                      t.cantidad = 0;
-                    });
-                  } else if (valor > 0) {
-                    // poner N corridas -> N piezas por talla con inventario
-                    prod.Tallas.forEach((t) => {
-                      if (t.Inventario > 0) t.cantidad = valor;
-                      else t.cantidad = 0;
+                      t.cantidad = t.Inventario > 0 ? valor : 0;
                     });
                   }
 
@@ -315,7 +313,6 @@ export default function App() {
 
           </div>
         ))}
-
       </div>
 
       {/* TOTAL + CLIENTE */}
