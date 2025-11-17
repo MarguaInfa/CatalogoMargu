@@ -6,7 +6,9 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 );
 
-// Generar Excel
+// ------------------------------------------------
+// Función para generar el archivo Excel
+// ------------------------------------------------
 async function generarExcel(pedido) {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Pedido");
@@ -39,7 +41,9 @@ async function generarExcel(pedido) {
   return buffer;
 }
 
-// Función para limpiar nombre
+// ------------------------------------------------
+// Limpiar nombre del archivo
+// ------------------------------------------------
 function limpiarNombre(str) {
   return str
     .normalize("NFD")
@@ -48,6 +52,9 @@ function limpiarNombre(str) {
     .toLowerCase();
 }
 
+// ------------------------------------------------
+// Handler principal
+// ------------------------------------------------
 export default async function handler(req, res) {
   try {
     if (req.method !== "POST") {
@@ -60,12 +67,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ ok: false, error: "Faltan datos" });
     }
 
-    // Crear fecha bonita y nombre del cliente
+    // Crear nombre limpio y fecha
     const hoy = new Date();
     const fecha = `${hoy.getDate()}-${hoy.getMonth() + 1}-${hoy.getFullYear()}`;
     const nombreLimpio = limpiarNombre(cliente);
 
-    // Crear nombre final del archivo
+    // Nombre final del archivo
     const fileName = `${fecha}_${nombreLimpio}.xlsx`;
 
     // Generar Excel
@@ -81,4 +88,24 @@ export default async function handler(req, res) {
       });
 
     if (error) {
-      console.log(er
+      console.log(error);
+      return res
+        .status(500)
+        .json({ ok: false, error: "Error subiendo archivo" });
+    }
+
+    // Obtener URL pública de Supabase
+    const { data } = supabase.storage
+      .from("pedidos")
+      .getPublicUrl(fileName);
+
+    return res.status(200).json({
+      ok: true,
+      url: data.publicUrl,
+      fileName,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ ok: false, error: "Error interno" });
+  }
+}
