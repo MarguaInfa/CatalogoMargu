@@ -157,7 +157,7 @@ export default function App() {
     }
 
     // Descargar Excel
-    window.open(data.url, "_blank");
+
 
     // Calcular totales
     let totalPzas = 0;
