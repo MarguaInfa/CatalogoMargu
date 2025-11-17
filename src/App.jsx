@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from "react";
 
 export default function App() {
-
-  const API_PEDIDOS = "/api/pedidos"; // ahora usamos tu backend
+  const API_PEDIDOS = "/api/pedidos"; // backend supabase
 
   const [productosData, setProductosData] = useState([]);
   const [productos, setProductos] = useState([]);
   const [cliente, setCliente] = useState("");
 
-  // FILTROS
   const [filtroGenero, setFiltroGenero] = useState("");
   const [filtroPrenda, setFiltroPrenda] = useState("");
   const [filtroColor, setFiltroColor] = useState("");
@@ -23,14 +21,13 @@ export default function App() {
   }, []);
 
   // =====================================================
-  // Agrupar productos por Serie + Color
+  // Agrupar productos
   useEffect(() => {
     if (productosData.length === 0) return;
 
     const agrupados = Object.values(
       productosData.reduce((acc, p) => {
         const key = `${p.Serie}-${p.Color}`;
-
         if (!acc[key]) {
           acc[key] = {
             Genero: p.Genero,
@@ -47,14 +44,12 @@ export default function App() {
             Tallas: []
           };
         }
-
         acc[key].Tallas.push({
           Talla: p.Talla,
           Edad: p.Edad,
           Inventario: p.Inventario,
           cantidad: 0
         });
-
         return acc;
       }, {})
     );
@@ -79,9 +74,8 @@ export default function App() {
   const tallas = [...new Set(productos.flatMap((p) => p.Tallas.map((t) => t.Talla)))];
 
   // =====================================================
-  // CALCULAR TOTAL
+  // TOTAL
   const total = (() => {
-    let totalPzas = 0;
     let totalDinero = 0;
 
     productos.forEach((p) => {
@@ -91,7 +85,6 @@ export default function App() {
       let precio = p.Menudeo;
       if (pzas >= p.Tallas.filter((x) => x.Inventario > 0).length) precio = p.Corrida;
 
-      totalPzas += pzas;
       totalDinero += pzas * precio;
     });
 
@@ -99,7 +92,7 @@ export default function App() {
   })();
 
   // =====================================================
-  // GENERAR PEDIDO PARA EXCEL
+  // GENERAR PEDIDO
   const generarPedidoParaExcel = () => {
     const pedidoFinal = [];
     let totalPiezas = 0;
@@ -140,12 +133,9 @@ export default function App() {
   };
 
   // =====================================================
-  // ENVIAR PEDIDO A TU BACKEND + WHATSAPP
+  // ENVIAR PEDIDO
   const enviarPedido = async () => {
-    if (!cliente) {
-      alert("Escribe el nombre del cliente");
-      return;
-    }
+    if (!cliente) return alert("Escribe el nombre del cliente");
 
     const pedido = generarPedidoParaExcel();
 
@@ -163,14 +153,13 @@ export default function App() {
         return;
       }
 
-      // Descargar archivo
+      // DESCARGAR ARCHIVO DESDE SUPABASE
       const link = document.createElement("a");
-      link.href = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${data.fileBase64}`;
-      link.download = data.fileName;
+      link.href = data.url;
+      link.target = "_blank";
       link.click();
 
-
-      // Datos para WhatsApp
+      // ENVIAR WHATSAPP
       let totalPzas = 0;
       let totalDinero = 0;
 
@@ -184,14 +173,14 @@ export default function App() {
         `Aquí está mi pedido:\n` +
         `🧵 Piezas: ${totalPzas}\n` +
         `💵 Total: $${totalDinero}\n\n` +
-        `Ya generé el archivo Excel del pedido ✔`
+        `📄 Ya generé el archivo Excel del pedido:\n${data.url}`
       );
 
       const telefono = "523471072670";
       const urlWhatsapp = `https://wa.me/${telefono}?text=${mensaje}`;
       window.open(urlWhatsapp, "_blank");
 
-      alert("Pedido generado y enviado. WhatsApp abierto ✔");
+      alert("Pedido generado y WhatsApp abierto ✔");
 
     } catch (e) {
       console.error("Error al enviar pedido:", e);
@@ -203,7 +192,6 @@ export default function App() {
   // UI
   return (
     <div className="p-6">
-
       <h1 className="text-3xl font-bold text-center mb-6">
         Catálogo Margu Infantil
       </h1>
