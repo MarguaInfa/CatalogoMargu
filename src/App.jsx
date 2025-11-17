@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 export default function App() {
 
   const GOOGLE_SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbzgLlsl-9154ktmsmSQVasE7IcsJ4HwTOsJhXWa82RhRtjs1-lMoPFsNPlzXqB1tn82aA/exec";
+    "https://script.google.com/macros/s/AKfycbyNMQVtpniXDgciLhiCLnrtql53ipr_z_1vf3oaGojWMrzEcPPyKewYph_AOVjLsr0g/exec";
 
   const [productosData, setProductosData] = useState([]);
   const [productos, setProductos] = useState([]);
