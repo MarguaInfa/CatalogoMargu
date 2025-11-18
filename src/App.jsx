@@ -39,7 +39,6 @@ export default function App() {
             Color: p.Color,
             CB: p.CB,
             Foto: p.Foto,
-            Menudeo: p.Menudeo,
             Mayoreo: p.Mayoreo,
             Corrida: p.Corrida,
             corridas: 0,
@@ -78,53 +77,56 @@ export default function App() {
   const tallas = [
     ...new Set(productos.flatMap((p) => p.Tallas.map((t) => t.Talla))),
   ];
-// ==========================================================
-  // GENERAR PEDIDO (CORRIDA / MAYOREO GLOBAL / MENUDEO)
-  // ==========================================================
-  const generarPedidoParaExcel = () => {
-    const pedidoFinal = [];
 
-    let totalPiezas = 0;
-    productos.forEach((p) =>
-      p.Tallas.forEach((t) => (totalPiezas += Number(t.cantidad || 0)))
+// ==========================================================
+// GENERAR PEDIDO (CORRIDA / MAYOREO GLOBAL)
+// ==========================================================
+const generarPedidoParaExcel = () => {
+  const pedidoFinal = [];
+
+  // Total global
+  let totalPiezas = 0;
+  productos.forEach((p) =>
+    p.Tallas.forEach((t) => (totalPiezas += Number(t.cantidad || 0)))
+  );
+
+  productos.forEach((p) => {
+    const pedidas = p.Tallas.filter((t) => Number(t.cantidad) > 0);
+    if (pedidas.length === 0) return;
+
+    const disponibles = p.Tallas.filter((t) => t.Inventario > 0);
+
+    // CORRIDA REAL = TODAS LAS TALLAS DISPONIBLES TIENEN AL MENOS 1
+    const esCorridaReal = disponibles.every(
+      (t) => Number(t.cantidad || 0) >= 1
     );
 
-    productos.forEach((p) => {
-     const pedidas = p.Tallas.filter((t) => Number(t.cantidad) > 0);
-     if (pedidas.length === 0) return;
+    let precioFinal;
 
-      const disponibles = p.Tallas.filter((t) => t.Inventario > 0);
+    if (esCorridaReal) {
+      precioFinal = p.Corrida;
+    } else {
+      // SIN MENDEDEO — SOLO MAYOREO SIEMPRE
+      precioFinal = p.Mayoreo;
+    }
 
-      const esCorridaReal = disponibles.every(
-        (t) => Number(t.cantidad || 0) >= 1
-      );
-
-      let precioFinal;
-
-      if (esCorridaReal) {
-        precioFinal = p.Corrida;
-      } else if (totalPiezas >= 12) {
-        precioFinal = p.Mayoreo;
-      } else {
-        precioFinal = p.Menudeo;
-      }
-
-      pedidas.forEach((t) => {
-        pedidoFinal.push({
-          lote: p.Lote,
-          serie: p.Serie,
-          cb: p.CB,
-          color: p.Color,
-          talla: t.Talla,
-          cantidad: Number(t.cantidad || 0),
-          foto: p.Foto,
-          precio: precioFinal,
-        });
+    pedidas.forEach((t) => {
+      pedidoFinal.push({
+        lote: p.Lote,
+        serie: p.Serie,
+        cb: p.CB,
+        color: p.Color,
+        talla: t.Talla,
+        cantidad: Number(t.cantidad || 0),
+        foto: p.Foto,
+        precio: precioFinal,
       });
     });
+  });
 
-    return pedidoFinal;
-  };
+  return pedidoFinal;
+};
+
 
   // ==========================================================
   // TOTAL MOSTRADO EN PANTALLA
@@ -181,7 +183,7 @@ const mensaje = encodeURIComponent(
 );
 
 
-      const tel = "523471072670";
+      const tel = "523471049168";
       window.open(`https://wa.me/${tel}?text=${mensaje}`, "_blank");
 
       alert("Pedido enviado ✔");
@@ -198,7 +200,7 @@ return (
   <div className="p-6">
 
     {/* LOGO SUPERIOR IZQUIERDO */}
-    <div className="flex items-center mb-6">
+    <div className="flex justify-start items-center mb-6">
       <img 
         src="/logo.png.jpg" 
         alt="Logo Margu" 
@@ -298,7 +300,6 @@ return (
               <thead className="bg-gray-200">
                 <tr>
                   <th>Talla</th>
-                  <th>Men</th>
                   <th>May</th>
                   <th>Cor</th>
                   <th>Cant</th>
@@ -310,7 +311,6 @@ return (
                 {p.Tallas.map((t, i) => (
                   <tr key={i}>
                     <td>{t.Talla}</td>
-                    <td>${p.Menudeo}</td>
                     <td>${p.Mayoreo}</td>
                     <td>${p.Corrida}</td>
 
