@@ -202,7 +202,7 @@ export default function App() {
 
       {/* LOGO SUPERIOR IZQUIERDO */}
       <div className="flex items-center mb-6">
-        <img src="/logo.png" className="w-20 h-auto" />
+        <img src="/logo.png.jpg" className="w-20 h-auto" />
       </div>
 
       <h1 className="text-3xl font-bold text-center mb-6">
