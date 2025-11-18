@@ -241,7 +241,7 @@ export default function App() {
       </div>
 
       {/* LISTA DE PRODUCTOS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {filtrados.map((p) => {
           const tabla = generarTablaPrecios(p);
 
@@ -253,25 +253,28 @@ export default function App() {
               <h2 className="font-bold mt-2">{p.Serie}</h2>
               <p className="text-gray-600">{p.Color}</p>
 
-              {/* TABLA DE PRECIOS */}
-              <table className="w-full mt-3 text-sm border">
-                <thead className="bg-gray-200">
-                  <tr>
-                    <th>Rango</th>
-                    <th>Mayoreo</th>
-                    <th>Corrida</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tabla.map((row, i) => (
-                    <tr key={i}>
-                      <td>{row.rango}</td>
-                      <td>${row.mayoreo}</td>
-                      <td>${row.corrida}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+{/* TABLA DE PRECIOS */}
+<div className="flex justify-center mt-3">
+  <table className="text-sm border w-auto text-center">
+    <thead className="bg-gray-200">
+      <tr>
+        <th className="px-3 py-1">Rango</th>
+        <th className="px-3 py-1">Mayoreo</th>
+        <th className="px-3 py-1">Corrida</th>
+      </tr>
+    </thead>
+    <tbody>
+      {tabla.map((row, i) => (
+        <tr key={i}>
+          <td className="px-3 py-1">{row.rango}</td>
+          <td className="px-3 py-1">${row.mayoreo}</td>
+          <td className="px-3 py-1">${row.corrida}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
 
               {/* CORRIDAS */}
               <div className="mt-2">
