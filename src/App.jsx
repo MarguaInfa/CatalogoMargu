@@ -20,6 +20,58 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => setProductosData(data));
   }, []);
+
+  // ============================================
+// AGRUPAR RANGOS DE TALLAS POR PRECIO
+// ============================================
+function generarTablaPrecios(tallas) {
+  // Convertimos a [{ talla: N, precio: N }]
+  const datos = tallas.map((t) => ({
+    talla: Number(t.Talla),
+    precio: Number(t.precio || t.Precio || t.price || t.Menudeo || 0)
+  }));
+
+  // Ordenamos por talla
+  const ordenadas = datos.sort((a, b) => a.talla - b.talla);
+
+  const grupos = [];
+  let inicio = ordenadas[0];
+  let fin = ordenadas[0];
+
+  for (let i = 1; i < ordenadas.length; i++) {
+    const actual = ordenadas[i];
+
+    if (
+      actual.talla === fin.talla + 1 &&
+      actual.precio === fin.precio
+    ) {
+      fin = actual;
+    } else {
+      grupos.push({ inicio, fin });
+      inicio = actual;
+      fin = actual;
+    }
+  }
+
+  grupos.push({ inicio, fin });
+
+  // Si todos los precios son iguales
+  const preciosUnicos = new Set(ordenadas.map((x) => x.precio));
+  if (preciosUnicos.size === 1) {
+    return [
+      { rango: "Todas las tallas", precio: ordenadas[0].precio }
+    ];
+  }
+
+  return grupos.map((g) => ({
+    rango:
+      g.inicio.talla === g.fin.talla
+        ? `Talla ${g.inicio.talla}`
+        : `Talla ${g.inicio.talla}–${g.fin.talla}`,
+    precio: g.inicio.precio
+  }));
+}
+
 // ==========================================================
   // AGRUPAR PRODUCTOS POR Serie + Color
   // ==========================================================
@@ -267,6 +319,39 @@ return (
               className="w-full aspect-square object-cover rounded-md"
             />
 
+            {/* TABLA DE RANGOS DE PRECIOS */}
+<div className="mt-3">
+  <h3 className="text-sm font-semibold mb-1 text-gray-700">
+    Precios por talla
+  </h3>
+
+  <table className="w-full text-sm border border-gray-300 rounded-lg overflow-hidden">
+    <thead className="bg-gray-100">
+      <tr>
+        <th className="p-2 border border-gray-300">Rango</th>
+        <th className="p-2 border border-gray-300">Precio</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {generarTablaPrecios(
+        p.Tallas.map((t) => ({
+          Talla: t.Talla,
+          precio: p.Menudeo // ← puedes cambiar a Mayoreo o Corrida si quieres
+        }))
+      ).map((fila, idx) => (
+        <tr key={idx}>
+          <td className="p-2 border border-gray-300">{fila.rango}</td>
+          <td className="p-2 border border-gray-300 font-bold">
+            ${fila.precio}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+
             <h2 className="font-bold mt-2">{p.Serie}</h2>
             <p className="text-gray-600">{p.Color}</p>
           {/* CORRIDAS */}
@@ -336,7 +421,7 @@ return (
                     <td
                       className={t.Inventario > 0 ? "text-green-600" : "text-red-600"}
                     >
-                      {t.Inventario > 0 ? "En stock" : "No hay"}
+                      {t.Inventario > 0 ? "" " : "No hay"}
                     </td>
                   </tr>
                 ))}
