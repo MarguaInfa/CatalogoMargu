@@ -248,7 +248,7 @@ export default function App() {
           return (
             <div key={p.Serie + p.Color} className="border p-3 bg-white rounded-xl shadow-md">
 
-              <img src={`/fotos/${p.Foto}`} className="w-full h-64 object-cover rounded-md" />
+              <img src={`/fotos/${p.Foto}`} className="w-full aspect-square object-cover rounded-md" />
 
               <h2 className="font-bold mt-2">{p.Serie}</h2>
               <p className="text-gray-600">{p.Color}</p>
@@ -320,10 +320,7 @@ export default function App() {
                   {p.Tallas.map((t, i) => (
                     <tr key={i}>
                       <td>{t.Talla}</td>
-                      <td>${p.Mayoreo}</td>
-                      <td>${p.Corrida}</td>
-
-                      <td>
+                       <td>
                         <input
                           type="number"
                           min="0"
