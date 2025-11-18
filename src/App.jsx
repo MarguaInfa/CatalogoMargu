@@ -309,9 +309,7 @@ export default function App() {
                 <thead className="bg-gray-200">
                   <tr>
                     <th>Talla</th>
-                    <th>May</th>
-                    <th>Cor</th>
-                    <th>Cant</th>
+                     <th>Cant</th>
                     <th>Stock</th>
                   </tr>
                 </thead>
