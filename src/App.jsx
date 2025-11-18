@@ -254,26 +254,28 @@ export default function App() {
               <p className="text-gray-600">{p.Color}</p>
 
 {/* TABLA DE PRECIOS */}
-<div className="flex justify-center mt-3">
-  <table className="text-sm border w-auto text-center">
+<div className="overflow-x-auto mt-3">
+  <table className="min-w-full text-sm text-center border">
     <thead className="bg-gray-200">
       <tr>
-        <th className="px-3 py-1">Rango</th>
-        <th className="px-3 py-1">Mayoreo</th>
-        <th className="px-3 py-1">Corrida</th>
+        <th className="px-2 py-1 whitespace-nowrap">Rango</th>
+        <th className="px-2 py-1 whitespace-nowrap">Mayoreo</th>
+        <th className="px-2 py-1 whitespace-nowrap">Corrida</th>
       </tr>
     </thead>
+
     <tbody>
       {tabla.map((row, i) => (
         <tr key={i}>
-          <td className="px-3 py-1">{row.rango}</td>
-          <td className="px-3 py-1">${row.mayoreo}</td>
-          <td className="px-3 py-1">${row.corrida}</td>
+          <td className="px-2 py-1">{row.rango}</td>
+          <td className="px-2 py-1">${row.mayoreo}</td>
+          <td className="px-2 py-1">${row.corrida}</td>
         </tr>
       ))}
     </tbody>
   </table>
 </div>
+
 
 
               {/* CORRIDAS */}
