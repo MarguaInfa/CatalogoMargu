@@ -192,7 +192,7 @@ export default function App() {
           `Archivo: ${data.url}`
       );
 
-      const tel = "523471072670";
+      const tel = "523471049168";
       window.open(`https://wa.me/${tel}?text=${mensaje}`, "_blank");
 
       alert("Pedido enviado ✔");
