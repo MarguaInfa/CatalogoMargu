@@ -88,16 +88,14 @@ export default function App() {
     const precios = p.Tallas.map((t) => ({
       talla: Number(t.Talla),
       mayoreo: p.Mayoreo,
-      'corrida: p.Corrida,
+      corrida: p.Corrida,
     })).sort((a, b) => a.talla - b.talla);
 
     return [
       {
-        rango: `${precios[0].talla} - ${
-          precios[precios.length - 1].talla
-        }`,
+        rango: `${precios[0].talla} - ${precios[precios.length - 1].talla}`,
         mayoreo: precios[0].mayoreo,
-       ' corrida: precios[0].corrida,
+        // corrida: precios[0].corrida,  (SE MANTIENE EN LÓGICA, SOLO NO SE MUESTRA)
       },
     ];
   }
@@ -171,7 +169,7 @@ export default function App() {
       });
 
       const data = await r.json();
-       if (!data.ok) {
+      if (!data.ok) {
         alert("Error generando archivo");
         return;
       }
@@ -184,7 +182,7 @@ export default function App() {
           `Archivo: ${data.url}`
       );
 
-      const tel = "523471072670";
+      const tel = "523471049168";
       window.open(`https://wa.me/${tel}?text=${mensaje}`, "_blank");
 
       alert("Pedido enviado ✔");
@@ -253,14 +251,13 @@ export default function App() {
               <h2 className="font-bold mt-2">{p.Serie}</h2>
               <p className="text-gray-600">{p.Color}</p>
 
-{/* TABLA DE PRECIOS */}
+{/* TABLA DE PRECIOS (SIN COLUMNA CORRIDA) */}
 <div className="overflow-x-auto mt-3">
   <table className="min-w-full text-sm text-center border">
     <thead className="bg-gray-200">
       <tr>
         <th className="px-2 py-1 whitespace-nowrap">Rango</th>
         <th className="px-2 py-1 whitespace-nowrap">Mayoreo</th>
-        <th className="px-2 py-1 whitespace-nowrap">Corrida</th>
       </tr>
     </thead>
 
@@ -269,14 +266,11 @@ export default function App() {
         <tr key={i}>
           <td className="px-2 py-1">{row.rango}</td>
           <td className="px-2 py-1">${row.mayoreo}</td>
-          <td className="px-2 py-1">${row.corrida}</td>
         </tr>
       ))}
     </tbody>
   </table>
 </div>
-
-
 
               {/* CORRIDAS */}
               <div className="mt-2">
@@ -314,7 +308,7 @@ export default function App() {
                 <thead className="bg-gray-200">
                   <tr>
                     <th>Talla</th>
-                     <th>Cant</th>
+                    <th>Cant</th>
                     <th>Stock</th>
                   </tr>
                 </thead>
@@ -323,7 +317,7 @@ export default function App() {
                   {p.Tallas.map((t, i) => (
                     <tr key={i}>
                       <td>{t.Talla}</td>
-                       <td>
+                      <td>
                         <input
                           type="number"
                           min="0"
@@ -383,4 +377,4 @@ export default function App() {
       </div>
     </div>
   );
- }
+}
