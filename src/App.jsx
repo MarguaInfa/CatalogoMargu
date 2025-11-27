@@ -88,7 +88,7 @@ export default function App() {
     const precios = p.Tallas.map((t) => ({
       talla: Number(t.Talla),
       mayoreo: p.Mayoreo,
-      corrida: p.Corrida,
+      'corrida: p.Corrida,
     })).sort((a, b) => a.talla - b.talla);
 
     return [
@@ -97,7 +97,7 @@ export default function App() {
           precios[precios.length - 1].talla
         }`,
         mayoreo: precios[0].mayoreo,
-        corrida: precios[0].corrida,
+       ' corrida: precios[0].corrida,
       },
     ];
   }
