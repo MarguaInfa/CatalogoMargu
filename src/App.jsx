@@ -22,6 +22,7 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => setProductosData(data));
   }, []);
+
   // ==========================================================
   // AGRUPAR PRODUCTOS POR Serie + Color
   // ==========================================================
@@ -48,10 +49,15 @@ export default function App() {
           };
         }
 
+        // COMBINAR TALLA + EDAD
+        const displayTalla = `${p.Talla} ${p.Edad}`.trim();
+        const claveTalla = `${p.Talla}-${p.Edad}`.trim();
+
         acc[key].Tallas.push({
-          Talla: p.Talla,
+          Talla: displayTalla,     // ej "10 Años"
+          TallaClave: claveTalla,  // ej "10-Años"
           Edad: p.Edad,
-          Inventario: p.Inventario,
+          Inventario: Number(p.Inventario),
           cantidad: 0,
         });
 
@@ -82,34 +88,33 @@ export default function App() {
   ];
 
   // ==========================================================
-  // TABLA DE PRECIOS POR RANGOS
+  // TABLA DE PRECIOS POR RANGOS (SIN COLUMNA CORRIDA)
   // ==========================================================
   function generarTablaPrecios(p) {
-    const precios = p.Tallas.map((t) => ({
-      talla: Number(t.Talla),
-      mayoreo: p.Mayoreo,
-      corrida: p.Corrida,
-    })).sort((a, b) => a.talla - b.talla);
+    const precios = p.Tallas
+      .map((t) => ({
+        tallaTexto: t.Talla,       // "10 Años"
+        tallaClave: t.TallaClave,  // "10-Años"
+        mayoreo: p.Mayoreo,
+        corrida: p.Corrida,
+      }))
+      .sort((a, b) => a.tallaClave.localeCompare(b.tallaClave));
 
     return [
       {
-        rango: `${precios[0].talla} - ${precios[precios.length - 1].talla}`,
+        rango: `${precios[0].tallaTexto} - ${
+          precios[precios.length - 1].tallaTexto
+        }`,
         mayoreo: precios[0].mayoreo,
-        // corrida: precios[0].corrida,  (SE MANTIENE EN LÓGICA, SOLO NO SE MUESTRA)
       },
     ];
   }
 
   // ==========================================================
-  // GENERAR PEDIDO (CORRIDA / MAYOREO GLOBAL)
+  // GENERAR PEDIDO (CORRIDA / MAYOREO)
   // ==========================================================
   const generarPedidoParaExcel = () => {
     const pedidoFinal = [];
-
-    let totalPiezas = 0;
-    productos.forEach((p) =>
-      p.Tallas.forEach((t) => (totalPiezas += Number(t.cantidad || 0)))
-    );
 
     productos.forEach((p) => {
       const pedidas = p.Tallas.filter((t) => Number(t.cantidad) > 0);
@@ -129,7 +134,7 @@ export default function App() {
           serie: p.Serie,
           cb: p.CB,
           color: p.Color,
-          talla: t.Talla,
+          talla: t.Talla, // sigue enviando "10 Años"
           cantidad: Number(t.cantidad || 0),
           foto: p.Foto,
           precio: precioFinal,
@@ -141,7 +146,7 @@ export default function App() {
   };
 
   // ==========================================================
-  // SUBTOTAL, ENVÍO Y TOTAL
+  // SUBTOTAL / TOTAL
   // ==========================================================
   const subtotal = (() => {
     const pedido = generarPedidoParaExcel();
@@ -182,8 +187,7 @@ export default function App() {
           `Archivo: ${data.url}`
       );
 
-      const tel = "523471049168";
-      window.open(`https://wa.me/${tel}?text=${mensaje}`, "_blank");
+      window.open(`https://wa.me/523471072670?text=${mensaje}`, "_blank");
 
       alert("Pedido enviado ✔");
     } catch (err) {
@@ -198,7 +202,6 @@ export default function App() {
   return (
     <div className="p-6">
 
-      {/* LOGO SUPERIOR IZQUIERDO */}
       <div className="flex items-center mb-6">
         <img src="/logo.png.jpg" className="w-20 h-auto" />
       </div>
@@ -251,7 +254,7 @@ export default function App() {
               <h2 className="font-bold mt-2">{p.Serie}</h2>
               <p className="text-gray-600">{p.Color}</p>
 
-{/* TABLA DE PRECIOS (SIN COLUMNA CORRIDA) */}
+{/* TABLA DE PRECIOS — SIN COLUMNA DE CORRIDA */}
 <div className="overflow-x-auto mt-3">
   <table className="min-w-full text-sm text-center border">
     <thead className="bg-gray-200">
@@ -354,7 +357,7 @@ export default function App() {
         })}
       </div>
 
-      {/* SUBTOTAL / ENVÍO / TOTAL */}
+      {/* SUBTOTAL / TOTAL */}
       <div className="text-center mt-10">
         <h2 className="text-xl font-bold">Subtotal: ${subtotal}</h2>
         <h2 className="text-xl font-bold">Envío: ${ENVIO}</h2>
