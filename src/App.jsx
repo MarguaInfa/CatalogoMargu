@@ -42,22 +42,23 @@ export default function App() {
             Color: p.Color,
             CB: p.CB,
             Foto: p.Foto,
-            Mayoreo: p.Mayoreo,
+            Mayoreo: p.Mayoreo, 
             Corrida: p.Corrida,
             corridas: 0,
             Tallas: [],
           };
         }
 
-        // COMBINAR TALLA + EDAD
         const displayTalla = `${p.Talla} ${p.Edad}`.trim();
         const claveTalla = `${p.Talla}-${p.Edad}`.trim();
 
         acc[key].Tallas.push({
-          Talla: displayTalla,     // ej "10 Años"
-          TallaClave: claveTalla,  // ej "10-Años"
+          Talla: displayTalla,     // "10 Años"
+          TallaClave: claveTalla,  // "10-Años"
           Edad: p.Edad,
+          TallaNumero: Number(p.Talla),
           Inventario: Number(p.Inventario),
+          Precio: Number(p.Mayoreo), // PRECIO REAL POR TALLA
           cantidad: 0,
         });
 
@@ -88,30 +89,39 @@ export default function App() {
   ];
 
   // ==========================================================
-  // TABLA DE PRECIOS POR RANGOS (SIN COLUMNA CORRIDA)
+  // TABLA DE PRECIOS POR RANGOS DE PRECIO
   // ==========================================================
   function generarTablaPrecios(p) {
+    // Lista de tallas con su precio real
     const precios = p.Tallas
       .map((t) => ({
-        tallaTexto: t.Talla,       // "10 Años"
-        tallaClave: t.TallaClave,  // "10-Años"
-        mayoreo: p.Mayoreo,
-        corrida: p.Corrida,
+        tallaTexto: t.Talla,
+        tallaClave: t.TallaClave,
+        precio: t.Precio,
       }))
       .sort((a, b) => a.tallaClave.localeCompare(b.tallaClave));
 
-    return [
-      {
-        rango: `${precios[0].tallaTexto} - ${
-          precios[precios.length - 1].tallaTexto
-        }`,
-        mayoreo: precios[0].mayoreo,
-      },
-    ];
+    // Agrupar por precio
+    const grupos = {};
+    precios.forEach((x) => {
+      if (!grupos[x.precio]) grupos[x.precio] = [];
+      grupos[x.precio].push(x);
+    });
+
+    // Convertir a rangos
+    const rangos = Object.entries(grupos).map(([precio, arr]) => {
+      arr.sort((a, b) => a.tallaClave.localeCompare(b.tallaClave));
+      return {
+        rango: `${arr[0].tallaTexto} - ${arr[arr.length - 1].tallaTexto}`,
+        precio: precio,
+      };
+    });
+
+    return rangos;
   }
 
   // ==========================================================
-  // GENERAR PEDIDO (CORRIDA / MAYOREO)
+  // GENERAR PEDIDO (PRECIO REAL POR TALLA)
   // ==========================================================
   const generarPedidoParaExcel = () => {
     const pedidoFinal = [];
@@ -120,24 +130,16 @@ export default function App() {
       const pedidas = p.Tallas.filter((t) => Number(t.cantidad) > 0);
       if (pedidas.length === 0) return;
 
-      const disponibles = p.Tallas.filter((t) => t.Inventario > 0);
-
-      const esCorridaReal = disponibles.every(
-        (t) => Number(t.cantidad || 0) >= 1
-      );
-
-      let precioFinal = esCorridaReal ? p.Corrida : p.Mayoreo;
-
       pedidas.forEach((t) => {
         pedidoFinal.push({
           lote: p.Lote,
           serie: p.Serie,
           cb: p.CB,
           color: p.Color,
-          talla: t.Talla, // sigue enviando "10 Años"
-          cantidad: Number(t.cantidad || 0),
+          talla: t.Talla,
+          cantidad: Number(t.cantidad),
           foto: p.Foto,
-          precio: precioFinal,
+          precio: t.Precio, // PRECIO REAL POR TALLA
         });
       });
     });
@@ -150,7 +152,10 @@ export default function App() {
   // ==========================================================
   const subtotal = (() => {
     const pedido = generarPedidoParaExcel();
-    return pedido.reduce((sum, x) => sum + x.cantidad * x.precio, 0);
+    return pedido.reduce(
+      (sum, x) => sum + Number(x.cantidad) * Number(x.precio),
+      0
+    );
   })();
 
   const total = subtotal + ENVIO;
@@ -187,7 +192,8 @@ export default function App() {
           `Archivo: ${data.url}`
       );
 
-      window.open(`https://wa.me/523471072670?text=${mensaje}`, "_blank");
+      const tel = "523471072670";
+      window.open(`https://wa.me/${tel}?text=${mensaje}`, "_blank");
 
       alert("Pedido enviado ✔");
     } catch (err) {
@@ -254,7 +260,7 @@ export default function App() {
               <h2 className="font-bold mt-2">{p.Serie}</h2>
               <p className="text-gray-600">{p.Color}</p>
 
-{/* TABLA DE PRECIOS — SIN COLUMNA DE CORRIDA */}
+{/* TABLA DE PRECIOS POR RANGOS DE PRECIO */}
 <div className="overflow-x-auto mt-3">
   <table className="min-w-full text-sm text-center border">
     <thead className="bg-gray-200">
@@ -268,7 +274,7 @@ export default function App() {
       {tabla.map((row, i) => (
         <tr key={i}>
           <td className="px-2 py-1">{row.rango}</td>
-          <td className="px-2 py-1">${row.mayoreo}</td>
+          <td className="px-2 py-1">${row.precio}</td>
         </tr>
       ))}
     </tbody>
