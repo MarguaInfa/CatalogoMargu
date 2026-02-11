@@ -42,7 +42,7 @@ export default function App() {
             Color: p.Color,
             CB: p.CB,
             Foto: p.Foto,
-            Mayoreo: p.Mayoreo, 
+            Mayoreo: p.Mayoreo,
             Corrida: p.Corrida,
             corridas: 0,
             Tallas: [],
@@ -53,10 +53,10 @@ export default function App() {
         const claveTalla = `${p.Talla}-${p.Edad}`.trim();
 
         acc[key].Tallas.push({
-          Talla: displayTalla,     // "10 Años"
-          TallaClave: claveTalla,  // "10-Años"
+          Talla: displayTalla, // "10 Años"
+          TallaClave: claveTalla, // "10-Años"
           Edad: p.Edad,
-          TallaNumero: Number(p.Talla),
+          TallaNumero: Number(p.Talla), // <-- número real
           Inventario: Number(p.Inventario),
           Precio: Number(p.Mayoreo), // PRECIO REAL POR TALLA
           cantidad: 0,
@@ -89,32 +89,40 @@ export default function App() {
   ];
 
   // ==========================================================
-  // TABLA DE PRECIOS POR RANGOS DE PRECIO
+  // TABLA DE PRECIOS POR RANGOS DE PRECIO (FIX ORDEN)
   // ==========================================================
   function generarTablaPrecios(p) {
-    // Lista de tallas con su precio real
+    // Lista de tallas con su precio real (incluye el número para ordenar)
     const precios = p.Tallas
       .map((t) => ({
         tallaTexto: t.Talla,
-        tallaClave: t.TallaClave,
-        precio: t.Precio,
+        tallaNumero: Number(t.TallaNumero),
+        precio: Number(t.Precio),
       }))
-      .sort((a, b) => a.tallaClave.localeCompare(b.tallaClave));
+      .sort((a, b) => a.tallaNumero - b.tallaNumero); // <-- orden correcto
 
     // Agrupar por precio
     const grupos = {};
     precios.forEach((x) => {
-      if (!grupos[x.precio]) grupos[x.precio] = [];
-      grupos[x.precio].push(x);
+      const key = String(x.precio);
+      if (!grupos[key]) grupos[key] = [];
+      grupos[key].push(x);
     });
 
-    // Convertir a rangos
+    // Convertir a rangos (cada grupo ya está ordenado por tallaNumero)
     const rangos = Object.entries(grupos).map(([precio, arr]) => {
-      arr.sort((a, b) => a.tallaClave.localeCompare(b.tallaClave));
+      arr.sort((a, b) => a.tallaNumero - b.tallaNumero);
       return {
         rango: `${arr[0].tallaTexto} - ${arr[arr.length - 1].tallaTexto}`,
         precio: precio,
       };
+    });
+
+    // Ordenar los rangos por la talla inicial (opcional)
+    rangos.sort((a, b) => {
+      const aIni = parseInt(a.rango.split(" - ")[0], 10);
+      const bIni = parseInt(b.rango.split(" - ")[0], 10);
+      return aIni - bIni;
     });
 
     return rangos;
@@ -207,7 +215,6 @@ export default function App() {
   // ==========================================================
   return (
     <div className="p-6">
-
       <div className="flex items-center mb-6">
         <img src="/logo.png.jpg" className="w-20 h-auto" />
       </div>
@@ -218,28 +225,40 @@ export default function App() {
 
       {/* FILTROS */}
       <div className="flex gap-3 justify-center mb-6 flex-wrap">
-        <select className="border p-2 rounded" onChange={(e) => setFiltroGenero(e.target.value)}>
+        <select
+          className="border p-2 rounded"
+          onChange={(e) => setFiltroGenero(e.target.value)}
+        >
           <option value="">Género</option>
           {generos.map((g) => (
             <option key={g}>{g}</option>
           ))}
         </select>
 
-        <select className="border p-2 rounded" onChange={(e) => setFiltroPrenda(e.target.value)}>
+        <select
+          className="border p-2 rounded"
+          onChange={(e) => setFiltroPrenda(e.target.value)}
+        >
           <option value="">Prenda</option>
           {prendas.map((p) => (
             <option key={p}>{p}</option>
           ))}
         </select>
 
-        <select className="border p-2 rounded" onChange={(e) => setFiltroColor(e.target.value)}>
+        <select
+          className="border p-2 rounded"
+          onChange={(e) => setFiltroColor(e.target.value)}
+        >
           <option value="">Color</option>
           {colores.map((c) => (
             <option key={c}>{c}</option>
           ))}
         </select>
 
-        <select className="border p-2 rounded" onChange={(e) => setFiltroTalla(e.target.value)}>
+        <select
+          className="border p-2 rounded"
+          onChange={(e) => setFiltroTalla(e.target.value)}
+        >
           <option value="">Talla</option>
           {tallas.map((t) => (
             <option key={t}>{t}</option>
@@ -253,33 +272,38 @@ export default function App() {
           const tabla = generarTablaPrecios(p);
 
           return (
-            <div key={p.Serie + p.Color} className="border p-3 bg-white rounded-xl shadow-md">
-
-              <img src={`/fotos/${p.Foto}`} className="w-full aspect-square object-cover rounded-md" />
+            <div
+              key={p.Serie + p.Color}
+              className="border p-3 bg-white rounded-xl shadow-md"
+            >
+              <img
+                src={`/fotos/${p.Foto}`}
+                className="w-full aspect-square object-cover rounded-md"
+              />
 
               <h2 className="font-bold mt-2">{p.Serie}</h2>
               <p className="text-gray-600">{p.Color}</p>
 
-{/* TABLA DE PRECIOS POR RANGOS DE PRECIO */}
-<div className="overflow-x-auto mt-3">
-  <table className="min-w-full text-sm text-center border">
-    <thead className="bg-gray-200">
-      <tr>
-        <th className="px-2 py-1 whitespace-nowrap">Rango</th>
-        <th className="px-2 py-1 whitespace-nowrap">Mayoreo</th>
-      </tr>
-    </thead>
+              {/* TABLA DE PRECIOS POR RANGOS DE PRECIO */}
+              <div className="overflow-x-auto mt-3">
+                <table className="min-w-full text-sm text-center border">
+                  <thead className="bg-gray-200">
+                    <tr>
+                      <th className="px-2 py-1 whitespace-nowrap">Rango</th>
+                      <th className="px-2 py-1 whitespace-nowrap">Mayoreo</th>
+                    </tr>
+                  </thead>
 
-    <tbody>
-      {tabla.map((row, i) => (
-        <tr key={i}>
-          <td className="px-2 py-1">{row.rango}</td>
-          <td className="px-2 py-1">${row.precio}</td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
+                  <tbody>
+                    {tabla.map((row, i) => (
+                      <tr key={i}>
+                        <td className="px-2 py-1">{row.rango}</td>
+                        <td className="px-2 py-1">${row.precio}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
               {/* CORRIDAS */}
               <div className="mt-2">
