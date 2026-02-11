@@ -293,7 +293,7 @@ export default function App() {
               className="border p-3 bg-white rounded-xl shadow-md"
             >
               <img
-                src={`/fotos/${p.Foto}`}
+                src={`/fotos/Comp/${p.Foto}`}
                 alt={`${p.Serie} ${p.Color}`}
                 loading={index < 8 ? "eager" : "lazy"}
                 fetchPriority={index < 2 ? "high" : "auto"}
