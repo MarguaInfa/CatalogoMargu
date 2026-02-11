@@ -14,6 +14,9 @@ export default function App() {
 
   const ENVIO = 250;
 
+  // ✅ NUEVO: carga por bloques
+  const [limite, setLimite] = useState(40);
+
   // ==========================================================
   // CARGAR productos.json
   // ==========================================================
@@ -56,7 +59,7 @@ export default function App() {
           Talla: displayTalla, // "10 Años"
           TallaClave: claveTalla, // "10-Años"
           Edad: p.Edad,
-          TallaNumero: Number(p.Talla), // <-- número real
+          TallaNumero: Number(p.Talla),
           Inventario: Number(p.Inventario),
           Precio: Number(p.Mayoreo), // PRECIO REAL POR TALLA
           cantidad: 0,
@@ -88,20 +91,23 @@ export default function App() {
     ...new Set(productos.flatMap((p) => p.Tallas.map((t) => t.Talla))),
   ];
 
+  // ✅ NUEVO: cuando cambian filtros, vuelve a mostrar solo 40
+  useEffect(() => {
+    setLimite(40);
+  }, [filtroGenero, filtroPrenda, filtroColor, filtroTalla]);
+
   // ==========================================================
   // TABLA DE PRECIOS POR RANGOS DE PRECIO (FIX ORDEN)
   // ==========================================================
   function generarTablaPrecios(p) {
-    // Lista de tallas con su precio real (incluye el número para ordenar)
     const precios = p.Tallas
       .map((t) => ({
         tallaTexto: t.Talla,
         tallaNumero: Number(t.TallaNumero),
         precio: Number(t.Precio),
       }))
-      .sort((a, b) => a.tallaNumero - b.tallaNumero); // <-- orden correcto
+      .sort((a, b) => a.tallaNumero - b.tallaNumero);
 
-    // Agrupar por precio
     const grupos = {};
     precios.forEach((x) => {
       const key = String(x.precio);
@@ -109,16 +115,14 @@ export default function App() {
       grupos[key].push(x);
     });
 
-    // Convertir a rangos (cada grupo ya está ordenado por tallaNumero)
     const rangos = Object.entries(grupos).map(([precio, arr]) => {
       arr.sort((a, b) => a.tallaNumero - b.tallaNumero);
       return {
         rango: `${arr[0].tallaTexto} - ${arr[arr.length - 1].tallaTexto}`,
-        precio: precio,
+        precio,
       };
     });
 
-    // Ordenar los rangos por la talla inicial (opcional)
     rangos.sort((a, b) => {
       const aIni = parseInt(a.rango.split(" - ")[0], 10);
       const bIni = parseInt(b.rango.split(" - ")[0], 10);
@@ -147,7 +151,7 @@ export default function App() {
           talla: t.Talla,
           cantidad: Number(t.cantidad),
           foto: p.Foto,
-          precio: t.Precio, // PRECIO REAL POR TALLA
+          precio: t.Precio,
         });
       });
     });
@@ -216,7 +220,7 @@ export default function App() {
   return (
     <div className="p-6">
       <div className="flex items-center mb-6">
-        <img src="/logo.png.jpg" className="w-20 h-auto" />
+        <img src="/logo.png.jpg" className="w-20 h-auto" alt="Margu" />
       </div>
 
       <h1 className="text-3xl font-bold text-center mb-6">
@@ -227,48 +231,60 @@ export default function App() {
       <div className="flex gap-3 justify-center mb-6 flex-wrap">
         <select
           className="border p-2 rounded"
+          value={filtroGenero}
           onChange={(e) => setFiltroGenero(e.target.value)}
         >
           <option value="">Género</option>
           {generos.map((g) => (
-            <option key={g}>{g}</option>
+            <option key={g} value={g}>
+              {g}
+            </option>
           ))}
         </select>
 
         <select
           className="border p-2 rounded"
+          value={filtroPrenda}
           onChange={(e) => setFiltroPrenda(e.target.value)}
         >
           <option value="">Prenda</option>
           {prendas.map((p) => (
-            <option key={p}>{p}</option>
+            <option key={p} value={p}>
+              {p}
+            </option>
           ))}
         </select>
 
         <select
           className="border p-2 rounded"
+          value={filtroColor}
           onChange={(e) => setFiltroColor(e.target.value)}
         >
           <option value="">Color</option>
           {colores.map((c) => (
-            <option key={c}>{c}</option>
+            <option key={c} value={c}>
+              {c}
+            </option>
           ))}
         </select>
 
         <select
           className="border p-2 rounded"
+          value={filtroTalla}
           onChange={(e) => setFiltroTalla(e.target.value)}
         >
           <option value="">Talla</option>
           {tallas.map((t) => (
-            <option key={t}>{t}</option>
+            <option key={t} value={t}>
+              {t}
+            </option>
           ))}
         </select>
       </div>
 
       {/* LISTA DE PRODUCTOS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-        {filtrados.map((p) => {
+        {filtrados.slice(0, limite).map((p, index) => {
           const tabla = generarTablaPrecios(p);
 
           return (
@@ -278,13 +294,19 @@ export default function App() {
             >
               <img
                 src={`/fotos/${p.Foto}`}
+                alt={`${p.Serie} ${p.Color}`}
+                loading={index < 8 ? "eager" : "lazy"}
+                fetchPriority={index < 2 ? "high" : "auto"}
+                decoding="async"
+                width="800"
+                height="800"
                 className="w-full aspect-square object-cover rounded-md"
               />
 
               <h2 className="font-bold mt-2">{p.Serie}</h2>
               <p className="text-gray-600">{p.Color}</p>
 
-              {/* TABLA DE PRECIOS POR RANGOS DE PRECIO */}
+              {/* TABLA DE PRECIOS POR RANGOS */}
               <div className="overflow-x-auto mt-3">
                 <table className="min-w-full text-sm text-center border">
                   <thead className="bg-gray-200">
@@ -293,7 +315,6 @@ export default function App() {
                       <th className="px-2 py-1 whitespace-nowrap">Mayoreo</th>
                     </tr>
                   </thead>
-
                   <tbody>
                     {tabla.map((row, i) => (
                       <tr key={i}>
@@ -386,6 +407,18 @@ export default function App() {
           );
         })}
       </div>
+
+      {/* BOTÓN CARGAR MÁS */}
+      {limite < filtrados.length && (
+        <div className="text-center mt-6">
+          <button
+            onClick={() => setLimite((x) => x + 40)}
+            className="bg-gray-800 text-white px-6 py-2 rounded"
+          >
+            Cargar más ({Math.min(limite, filtrados.length)}/{filtrados.length})
+          </button>
+        </div>
+      )}
 
       {/* SUBTOTAL / TOTAL */}
       <div className="text-center mt-10">
